@@ -1,0 +1,19 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Entornos y dependencias (por si la implementación es Node/Python)
+node_modules/
+venv/
+__pycache__/
+*.pyc
+
+# Variables de entorno / credenciales
+.env
+.env.*
+*credentials*.json
+service-account*.json
+
+# Editores
+.vscode/
+.idea/
