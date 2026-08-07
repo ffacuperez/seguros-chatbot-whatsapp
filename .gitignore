@@ -11,6 +11,7 @@ __pycache__/
 # Variables de entorno / credenciales
 .env
 .env.*
+!.env.example
 *credentials*.json
 service-account*.json
 

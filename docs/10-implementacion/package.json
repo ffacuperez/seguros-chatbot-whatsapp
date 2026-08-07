@@ -1,0 +1,19 @@
+{
+  "name": "broker-chatbot-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend del chatbot de captación de cotizaciones - Seguros Germán Perez",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5",
+    "axios": "^1.7.7",
+    "ioredis": "^5.4.1",
+    "googleapis": "^140.0.1",
+    "node-cron": "^3.0.3"
+  }
+}
