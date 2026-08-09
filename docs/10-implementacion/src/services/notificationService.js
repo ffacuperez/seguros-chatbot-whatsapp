@@ -13,6 +13,6 @@ export async function notificarNuevoLead(lead) {
       lead.aseguradoraPreferida,
     ]);
   } catch (error) {
-    console.error('No se pudo notificar a Sandra (el lead ya está guardado en Sheets):', error.message);
+     console.error('No se pudo notificar a Sandra:', JSON.stringify(error.response?.data, null, 2));
   }
 }
