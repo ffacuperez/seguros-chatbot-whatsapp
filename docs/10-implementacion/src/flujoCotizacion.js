@@ -64,7 +64,7 @@ function manejarBienvenida(session) {
         cuerpo: '¿Qué querés asegurar?',
         botones: [
           { id: 'tipo_auto_moto', titulo: 'Auto / Moto' },
-          { id: 'tipo_otro', titulo: 'Otro (Hogar, Comercio...)' },
+          { id: 'tipo_otro', titulo: 'Otro seguro' },
         ],
       },
     ],
@@ -108,7 +108,7 @@ function manejarTipoSeguro(session, mensaje) {
         cuerpo: 'No entendí esa opción. ¿Qué querés asegurar?',
         botones: [
           { id: 'tipo_auto_moto', titulo: 'Auto / Moto' },
-          { id: 'tipo_otro', titulo: 'Otro (Hogar, Comercio...)' },
+          { id: 'tipo_otro', titulo: 'Otro seguro' },
         ],
       },
     ],
