@@ -42,6 +42,9 @@ export function procesarPaso(session, mensajeEntrante) {
     case 'esperando_aseguradora':
       return manejarAseguradora(session, mensajeEntrante);
 
+    case 'derivado_manual':
+      return manejarNombreManual(session, mensajeEntrante);
+
     default:
       // Sesión ya completada u otro estado inesperado - se reinicia (UC-07)
       return manejarBienvenida({ ...session, paso_actual: 'bienvenida' });
@@ -205,6 +208,29 @@ function manejarAseguradora(session, mensaje) {
       ],
     };
   }
+
+  // A1 de UC-02 (continuación) - captura el nombre para derivación manual
+function manejarNombreManual(session, mensaje) {
+  const valor = (mensaje?.valor || '').trim();
+
+  if (!valor) {
+    return {
+      session,
+      acciones: [{ tipo: 'texto', contenido: 'Necesito tu nombre para que te puedan contactar. ¿Cómo te llamás?' }],
+    };
+  }
+
+  session.nombre = valor;
+  session.tipo_seguro = 'Otro (a definir)'; // ver nota abajo
+  session.paso_actual = 'completado';
+  session.estado_conversacion = 'completada';
+
+  return {
+    session,
+    acciones: [{ tipo: 'texto', contenido: '¡Gracias! Ya avisamos a Germán/Sandra para que te contacten.' }],
+    listoParaGuardar: true,
+  };
+}
 
   const aseguradoraElegida = config.aseguradoras.find((a) => mensaje?.valor === `aseg_${a.toLowerCase()}`);
 
