@@ -1,6 +1,6 @@
 # 08 · Arquitectura Técnica
 
-![Diagrama de componentes](img/arquitectura-componentes.svg)
+![Diagrama de componentes](img/arquitectura-componentes.png)
 
 ## Componentes
 
