@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { verificarWebhook, extraerMensajeEntrante } from './integrations/whatsapp.js';
 import { manejarMensajeEntrante } from './services/conversationService.js';
+import { marcarMensajeComoNuevo } from './state/redisClient.js';
 
 const router = Router();
 
@@ -24,9 +25,16 @@ router.post('/webhook', async (req, res) => {
 
   try {
     const mensaje = extraerMensajeEntrante(req.body);
-    if (mensaje && mensaje.tipo !== 'no_soportado') {
-      await manejarMensajeEntrante(mensaje);
+    if (!mensaje || mensaje.tipo === 'no_soportado') return;
+
+    // BUG-05: descarta reintentos del mismo mensaje (típico durante el cold start de Render)
+    const esNuevo = await marcarMensajeComoNuevo(mensaje.id);
+    if (!esNuevo) {
+      console.log(`Mensaje duplicado ignorado: ${mensaje.id}`);
+      return;
     }
+
+    await manejarMensajeEntrante(mensaje);
   } catch (error) {
     console.error('Error procesando mensaje entrante:', error);
   }
