@@ -126,20 +126,21 @@ export function extraerMensajeEntrante(body) {
   if (!mensaje) return null;
 
   const from = mensaje.from;
+  const id = mensaje.id;
 
   if (mensaje.type === 'text') {
-    return { from, tipo: 'texto', valor: mensaje.text.body.trim() };
+    return { from, id, tipo: 'texto', valor: mensaje.text.body.trim() };
   }
 
   if (mensaje.type === 'interactive') {
     const interactive = mensaje.interactive;
     if (interactive.type === 'button_reply') {
-      return { from, tipo: 'seleccion', valor: interactive.button_reply.id };
+      return { from, id, tipo: 'seleccion', valor: interactive.button_reply.id };
     }
     if (interactive.type === 'list_reply') {
-      return { from, tipo: 'seleccion', valor: interactive.list_reply.id };
+      return { from, id, tipo: 'seleccion', valor: interactive.list_reply.id };
     }
   }
 
-  return { from, tipo: 'no_soportado', valor: null };
+  return { from, id, tipo: 'no_soportado', valor: null };
 }
