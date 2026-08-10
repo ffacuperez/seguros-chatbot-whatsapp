@@ -47,6 +47,17 @@ export async function eliminarSession(telefono) {
 }
 
 /**
+ * Deduplicación de eventos de webhook - corrige BUG-05 (Render con cold start
+ * hace que Meta reintente el mismo mensaje varias veces antes de que el
+ * servidor responda, y cada reintento se procesaba como mensaje nuevo).
+ * Devuelve true la primera vez que se ve ese messageId, false si ya se procesó.
+ */
+export async function marcarMensajeComoNuevo(messageId) {
+  const resultado = await redis.set(`msg:${messageId}`, '1', 'EX', 60 * 60 * 24, 'NX');
+  return resultado === 'OK';
+}
+
+/**
  * Recorre todas las sesiones activas para detectar abandono - HU-06 / RF-15.
  * Usado por el job programado en src/jobs/marcarAbandonadas.js
  */
