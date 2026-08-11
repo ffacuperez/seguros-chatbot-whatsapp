@@ -11,13 +11,18 @@ import { notificarNuevoLead } from './notificationService.js';
  * y delega en ServicioLeads / ServicioNotificaciones al cerrar el flujo.
  */
 export async function manejarMensajeEntrante(mensaje) {
-  const { from: telefono } = mensaje;
+  const { from: telefono, nombrePerfil } = mensaje;
 
   let session = await getSession(telefono);
 
   // UC-07: si no hay sesión (nunca escribió, o la sesión expiró/fue completada), arranca de cero
   if (!session || session.estado_conversacion !== 'activa') {
     session = crearSessionInicial(telefono);
+  }
+
+  // El nombre del perfil de WhatsApp se captura automáticamente, sin preguntarle al cliente
+  if (nombrePerfil && !session.nombre) {
+    session.nombre = nombrePerfil;
   }
 
   const { session: sessionActualizada, acciones, listoParaGuardar } = procesarPaso(session, mensaje);

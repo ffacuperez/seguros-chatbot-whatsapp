@@ -128,19 +128,22 @@ export function extraerMensajeEntrante(body) {
   const from = mensaje.from;
   const id = mensaje.id;
 
+  // El nombre del perfil de WhatsApp viene gratis en el payload — no hace falta pedirlo
+  const nombrePerfil = change?.value?.contacts?.[0]?.profile?.name || null;
+
   if (mensaje.type === 'text') {
-    return { from, id, tipo: 'texto', valor: mensaje.text.body.trim() };
+    return { from, id, nombrePerfil, tipo: 'texto', valor: mensaje.text.body.trim() };
   }
 
   if (mensaje.type === 'interactive') {
     const interactive = mensaje.interactive;
     if (interactive.type === 'button_reply') {
-      return { from, id, tipo: 'seleccion', valor: interactive.button_reply.id };
+      return { from, id, nombrePerfil, tipo: 'seleccion', valor: interactive.button_reply.id };
     }
     if (interactive.type === 'list_reply') {
-      return { from, id, tipo: 'seleccion', valor: interactive.list_reply.id };
+      return { from, id, nombrePerfil, tipo: 'seleccion', valor: interactive.list_reply.id };
     }
   }
 
-  return { from, id, tipo: 'no_soportado', valor: null };
+  return { from, id, nombrePerfil, tipo: 'no_soportado', valor: null };
 }
