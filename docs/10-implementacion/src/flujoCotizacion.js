@@ -1,7 +1,7 @@
 import { config } from './config.js';
 
 // Formato esperado de patente argentina: viejo (ABC123) o mercosur (AB123CD) - RF-07
-const REGEX_PATENTE = /^[A-Z]{3}\d{3}$|^[A-Z]{2}\d{3}[A-Z]{2}$/i;
+const REGEX_PATENTE = /^[A-Z]{3}\d{3}$|^[A-Z]{2}\d{3}[A-Z]{2}$|^[A-Z]\d{3}[A-Z]{3}$/i;
 const REGEX_CODIGO_POSTAL = /^\d{4}$/; // RF-08
 
 /**

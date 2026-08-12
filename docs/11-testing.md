@@ -10,7 +10,7 @@ Derivados directo de los criterios de aceptación (Gherkin) de `04-historias-de-
 | TC-02 | HU-02 | Selección de Auto/Moto | Tocar el botón "Auto / Moto" | El bot avanza y pide la patente | ✅ Pasado |
 | TC-03 | HU-02 | Selección de tipo no disponible | Tocar el botón "Otro (Hogar, Comercio...)" | El bot informa que se gestiona manualmente y no sigue el flujo automatizado | ✅ Pasado |
 | TC-04 | HU-03 | Patente con formato inválido | Responder con un valor que no matchea el regex (ej. `12345`) | El bot pide el dato de nuevo, indicando el formato esperado | ✅ Pasado |
-| TC-05 | HU-03 | Patente válida | Responder con formato correcto (ej. `AB123CD`) | El bot avanza y pide la marca | ✅ Pasado |
+| TC-05 | HU-03 | Patente válida | Responder con formato correcto de auto (`AB123CD`) o moto (`A123BCD`) | El bot avanza y pide la marca | ✅ Pasado (auto) / ✅ Pasado (moto, tras BUG-11) |
 | TC-06 | HU-03 | Código postal no numérico | Responder con letras en vez de números | El bot vuelve a pedir el código postal | ✅ Pasado |
 | TC-07 | HU-04 | Cliente elige "No sé, recomendame" | Tocar esa opción en la lista | El bot muestra el resumen de pros/contras y vuelve a preguntar | ✅ Pasado |
 | TC-08 | HU-04 | Cliente elige una aseguradora directamente | Tocar "Rivadavia" (o cualquiera de la lista) | El bot guarda esa preferencia y cierra el flujo | ✅ Pasado |
@@ -103,6 +103,13 @@ RF-11 dice que el default a Triunfo debería aplicarse "luego de un tiempo defin
 - **Causa:** `node-cron` depende de que el proceso de Node esté corriendo en el momento exacto de cada disparo programado. En el plan gratuito de Render, sin tráfico HTTP entrante el proceso se duerme a los ~15 minutos de inactividad — mientras está dormido, ningún timer interno (incluido el cron) puede dispararse
 - **Resolución:** Decisión consciente de no resolver por ahora — con el volumen de tráfico actual (bajo), no se justifica pagar un plan de Render ni sumar un servicio externo de keep-alive. Queda como limitación conocida, a revisar si el volumen de conversaciones crece (ver KPI-01 en `12-kpis-y-resultados`)
 - **Aprendizaje:** Un cron interno (`node-cron`) solo es confiable si el proceso que lo hostea está garantizado de estar siempre vivo. En hosting con sleep automático, cualquier tarea programada (no solo esta) corre el riesgo de no dispararse — vale la pena tenerlo en cuenta para futuras funcionalidades basadas en tiempo
+
+### BUG-11 · El regex de patente no contemplaba el formato de moto
+
+- **Síntoma:** Un cliente real no pudo cargar la patente de su moto (`A123BCD`) — el bot la rechazaba una y otra vez
+- **Causa:** `REGEX_PATENTE` solo contemplaba los dos formatos de patente de **auto** (viejo `ABC123`, mercosur `AB123CD`), pero nunca se agregó el formato mercosur de **moto** (1 letra + 3 números + 3 letras, ej. `A123BCD`) — a pesar de que el tipo de seguro literalmente se llama "Auto/Moto" (HU-02)
+- **Resolución:** Se agregó la tercera variante al regex: `^[A-Z]\d{3}[A-Z]{3}$`. Verificado con los 3 formatos válidos y los inválidos ya probados en TC-04
+- **Aprendizaje:** Cuando un campo de un flujo dice cubrir dos categorías ("Auto/Moto"), hay que validar explícitamente con datos reales de *cada* categoría, no solo de la más común. Un test que solo prueba con patentes de auto puede pasar en verde y dejar la mitad del flujo roto
 
 ## Estado general
 
