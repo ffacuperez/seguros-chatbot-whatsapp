@@ -16,7 +16,7 @@ Derivados directo de los criterios de aceptación (Gherkin) de `04-historias-de-
 | TC-08 | HU-04 | Cliente elige una aseguradora directamente | Tocar "Rivadavia" (o cualquiera de la lista) | El bot guarda esa preferencia y cierra el flujo | ✅ Pasado |
 | TC-09 | HU-05 | Guardado del lead en Sheets | Completar el flujo entero | Se agrega una fila nueva en la hoja "Leads" con los datos correctos y `Estado = Pendiente` | ✅ Pasado (tras resolver BUG-02 y BUG-03) |
 | TC-10 | HU-05 | Notificación a Sandra | Completar el flujo entero | Sandra recibe el WhatsApp con nombre, tipo de seguro y aseguradora | ✅ Pasado — plantilla aprobada por Meta, notificación confirmada recibida por Sandra en producción |
-| TC-11 | HU-06 | Conversación abandonada | Iniciar el flujo y no responder por más de 24hs | El job marca la sesión como `abandonada` en Redis | ⏳ Pendiente (requiere esperar el tiempo real o simular la fecha) |
+| TC-11 | HU-06 | Conversación abandonada | Iniciar el flujo y no responder por más de 24hs | El job marca la sesión como `abandonada` en Redis | ⏸️ No validado — bloqueado por BUG-10, deprioritizado a propósito (bajo volumen de tráfico actual no justifica el costo de resolverlo todavía) |
 | TC-12 | HU-07 | Pedido de cotización en otra aseguradora | Luego de recibir la primera cotización, pedir otra | El broker cotiza en la nueva aseguradora reutilizando los datos ya capturados | ✅ Pasado (depende de proceso manual del broker, fuera del bot) |
 
 ## Registro de bugs encontrados
@@ -97,12 +97,17 @@ RF-11 dice que el default a Triunfo debería aplicarse "luego de un tiempo defin
 - **Resolución:** En vez de agregar una pregunta extra al flujo (más fricción para el cliente), se implementó la captura automática del nombre del perfil de WhatsApp, que Meta ya incluye en el payload del webhook (`contacts[0].profile.name`). Se extrae en `whatsapp.js` y se guarda en la sesión desde `conversationService.js`, sin que el cliente tenga que hacer nada
 - **Aprendizaje:** Antes de agregar un campo nuevo al flujo de conversación, revisar si el dato ya está disponible en el payload de Meta — evita sumar fricción innecesaria al cliente
 
-## Estado general
+### BUG-10 · El job de abandono no corre si el servidor está dormido
+
+- **Síntoma:** Una sesión superó ampliamente las 24hs de inactividad (transcurrieron ~3hs desde el umbral) y seguía figurando `estado_conversacion: "activa"` en Redis
+- **Causa:** `node-cron` depende de que el proceso de Node esté corriendo en el momento exacto de cada disparo programado. En el plan gratuito de Render, sin tráfico HTTP entrante el proceso se duerme a los ~15 minutos de inactividad — mientras está dormido, ningún timer interno (incluido el cron) puede dispararse
+- **Resolución:** Decisión consciente de no resolver por ahora — con el volumen de tráfico actual (bajo), no se justifica pagar un plan de Render ni sumar un servicio externo de keep-alive. Queda como limitación conocida, a revisar si el volumen de conversaciones crece (ver KPI-01 en `12-kpis-y-resultados`)
+- **Aprendizaje:** Un cron interno (`node-cron`) solo es confiable si el proceso que lo hostea está garantizado de estar siempre vivo. En hosting con sleep automático, cualquier tarea programada (no solo esta) corre el riesgo de no dispararse — vale la pena tenerlo en cuenta para futuras funcionalidades basadas en tiempo
 
 ## Estado general
 
-**11 de 12 casos de prueba pasados en producción.** El único pendiente es TC-11 (conversación abandonada a las 24hs), que requiere esperar el tiempo real para validar — actualmente en curso.
+**10 de 12 casos de prueba pasados, 1 deprioritizado a propósito (TC-11), 1 dependiente de proceso manual externo (TC-12).** El proyecto se da por cerrado en esta iteración con este resultado — no queda ningún pendiente de lógica de negocio, solo una limitación de infraestructura aceptada conscientemente por bajo volumen de uso actual.
 
-Todos los bugs detectados (BUG-01 a BUG-09) están resueltos. El flujo end-to-end completo — desde el primer mensaje del cliente, pasando por la captación guiada de datos con validación, la elección de aseguradora (con y sin texto libre), el guardado en Google Sheets, y la notificación a Sandra por WhatsApp — está funcionando en producción con usuarios reales.
+Todos los bugs de lógica y de código (BUG-01 a BUG-09) están resueltos. El flujo end-to-end completo — desde el primer mensaje del cliente, pasando por la captación guiada de datos con validación, la elección de aseguradora (con y sin texto libre), el guardado en Google Sheets, y la notificación a Sandra por WhatsApp — está funcionando en producción con usuarios reales.
 
 La implementación fue validada no solo por el desarrollador sino también por una usuaria externa (sin conocimientos técnicos), cuyas pruebas reales revelaron bugs que de otra forma no se habrían detectado (BUG-05, BUG-06).
