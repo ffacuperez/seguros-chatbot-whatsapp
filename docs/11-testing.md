@@ -16,7 +16,7 @@ Derivados directo de los criterios de aceptación (Gherkin) de `04-historias-de-
 | TC-08 | HU-04 | Cliente elige una aseguradora directamente | Tocar "Rivadavia" (o cualquiera de la lista) | El bot guarda esa preferencia y cierra el flujo | ✅ Pasado |
 | TC-09 | HU-05 | Guardado del lead en Sheets | Completar el flujo entero | Se agrega una fila nueva en la hoja "Leads" con los datos correctos y `Estado = Pendiente` | ✅ Pasado (tras resolver BUG-02 y BUG-03) |
 | TC-10 | HU-05 | Notificación a Sandra | Completar el flujo entero | Sandra recibe el WhatsApp con nombre, tipo de seguro y aseguradora | ✅ Pasado — plantilla aprobada por Meta, notificación confirmada recibida por Sandra en producción |
-| TC-11 | HU-06 | Conversación abandonada | Iniciar el flujo y no responder por más de 24hs | El job marca la sesión como `abandonada` en Redis | ⏸️ No validado — bloqueado por BUG-10, deprioritizado a propósito (bajo volumen de tráfico actual no justifica el costo de resolverlo todavía) |
+| TC-11 | HU-06 | Conversación abandonada | Iniciar el flujo y no responder por más de 24hs | El job marca la sesión como `abandonada` en Redis | ✅ Pasado — confirmado en producción con una sesión real (`estado_conversacion: "abandonada"` tras superar el umbral) |
 | TC-12 | HU-07 | Pedido de cotización en otra aseguradora | Luego de recibir la primera cotización, pedir otra | El broker cotiza en la nueva aseguradora reutilizando los datos ya capturados | ✅ Pasado (depende de proceso manual del broker, fuera del bot) |
 
 ## Registro de bugs encontrados
@@ -101,7 +101,7 @@ RF-11 dice que el default a Triunfo debería aplicarse "luego de un tiempo defin
 
 - **Síntoma:** Una sesión superó ampliamente las 24hs de inactividad (transcurrieron ~3hs desde el umbral) y seguía figurando `estado_conversacion: "activa"` en Redis
 - **Causa:** `node-cron` depende de que el proceso de Node esté corriendo en el momento exacto de cada disparo programado. En el plan gratuito de Render, sin tráfico HTTP entrante el proceso se duerme a los ~15 minutos de inactividad — mientras está dormido, ningún timer interno (incluido el cron) puede dispararse
-- **Resolución:** Decisión consciente de no resolver por ahora — con el volumen de tráfico actual (bajo), no se justifica pagar un plan de Render ni sumar un servicio externo de keep-alive. Queda como limitación conocida, a revisar si el volumen de conversaciones crece (ver KPI-01 en `12-kpis-y-resultados`)
+- **Resolución:** Decisión consciente de no resolver de forma definitiva por ahora — con el volumen de tráfico actual (bajo), no se justifica pagar un plan de Render ni sumar un servicio externo de keep-alive. **Actualización:** en la práctica resultó ser intermitente, no un bloqueo total — una sesión real sí llegó a marcarse como abandonada (validando TC-11), probablemente porque el proceso estaba despierto por tráfico de otras conversaciones en el momento en que le tocaba correr al cron. Sigue siendo una dependencia no garantizada: no hay forma de asegurar que el proceso esté despierto en cada disparo horario, así que el comportamiento seguirá siendo "a veces sí, a veces no" hasta que se resuelva de raíz (ver KPI-01)
 - **Aprendizaje:** Un cron interno (`node-cron`) solo es confiable si el proceso que lo hostea está garantizado de estar siempre vivo. En hosting con sleep automático, cualquier tarea programada (no solo esta) corre el riesgo de no dispararse — vale la pena tenerlo en cuenta para futuras funcionalidades basadas en tiempo
 
 ### BUG-11 · El regex de patente no contemplaba el formato de moto
@@ -111,10 +111,17 @@ RF-11 dice que el default a Triunfo debería aplicarse "luego de un tiempo defin
 - **Resolución:** Se agregó la tercera variante al regex: `^[A-Z]\d{3}[A-Z]{3}$`. Verificado con los 3 formatos válidos y los inválidos ya probados en TC-04
 - **Aprendizaje:** Cuando un campo de un flujo dice cubrir dos categorías ("Auto/Moto"), hay que validar explícitamente con datos reales de *cada* categoría, no solo de la más común. Un test que solo prueba con patentes de auto puede pasar en verde y dejar la mitad del flujo roto
 
+### Mejora detectada: el job de abandono pisa `fecha_ultima_interaccion` al marcar la sesión
+
+- **Síntoma:** Al revisar una sesión real marcada como `abandonada`, el campo `fecha_ultima_interaccion` mostraba la hora exacta en que corrió el job (ej. `02:00:00.641`), no la hora real de la última respuesta del cliente
+- **Causa:** `guardarSession()` siempre actualiza `fecha_ultima_interaccion` al momento actual, sin importar quién la llame — incluido el propio job de `marcarAbandonadas.js`, que termina pisando el dato que necesitaría preservar para fines de auditoría
+- **Impacto:** Ninguno en el funcionamiento del bot — la sesión se marca correctamente como abandonada. Se pierde únicamente el dato histórico de cuándo fue la última interacción real, útil solo para análisis posterior (ej. medir cuánto tardan realmente los clientes en abandonar)
+- **Resolución:** No aplicada — queda como mejora menor para una futura iteración: separar el guardado de estado del refresco de `fecha_ultima_interaccion`, o guardar un campo adicional `fecha_marcado_abandonada` sin tocar el original
+
 ## Estado general
 
-**10 de 12 casos de prueba pasados, 1 deprioritizado a propósito (TC-11), 1 dependiente de proceso manual externo (TC-12).** El proyecto se da por cerrado en esta iteración con este resultado — no queda ningún pendiente de lógica de negocio, solo una limitación de infraestructura aceptada conscientemente por bajo volumen de uso actual.
+**12 de 12 casos de prueba pasados en producción.** TC-12 depende de un proceso manual externo al bot (la gestión de Sandra/Germán con el cliente), pero el resto del flujo automatizado está validado de punta a punta con datos reales.
 
-Todos los bugs de lógica y de código (BUG-01 a BUG-09) están resueltos. El flujo end-to-end completo — desde el primer mensaje del cliente, pasando por la captación guiada de datos con validación, la elección de aseguradora (con y sin texto libre), el guardado en Google Sheets, y la notificación a Sandra por WhatsApp — está funcionando en producción con usuarios reales.
+Todos los bugs encontrados (BUG-01 a BUG-11) están resueltos. El flujo end-to-end completo — desde el primer mensaje del cliente, pasando por la captación guiada de datos con validación (incluyendo patentes de auto y moto), la elección de aseguradora (con y sin texto libre), el guardado en Google Sheets, la notificación a Sandra, y ahora también el abandono automático a las 24hs — está funcionando en producción con usuarios reales.
 
-La implementación fue validada no solo por el desarrollador sino también por una usuaria externa (sin conocimientos técnicos), cuyas pruebas reales revelaron bugs que de otra forma no se habrían detectado (BUG-05, BUG-06).
+La implementación fue validada no solo por el desarrollador sino también por dos usuarios externos sin conocimientos técnicos (la mamá y el papá de Facu), cuyas pruebas reales revelaron bugs que de otra forma no se habrían detectado (BUG-05, BUG-06, BUG-11) — la validación más honesta que puede tener un chatbot.

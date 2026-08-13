@@ -17,7 +17,7 @@ Un bot de WhatsApp que guía al cliente con un flujo de botones, captura los dat
 - [x] Testing end-to-end en producción
 - [x] KPIs definidos, primeros resultados cualitativos confirmados
 
-**El bot está en producción**, atendiendo clientes reales por WhatsApp. 10 de 12 casos de prueba pasados; los 2 restantes son una limitación de infraestructura aceptada a propósito por bajo volumen de tráfico (ver `11-testing`) y un caso que depende de un flujo manual externo al bot.
+**El bot está en producción**, atendiendo clientes reales por WhatsApp. **12 de 12 casos de prueba pasados** — validado tanto por el desarrollador como por usuarios reales sin conocimientos técnicos.
 
 ## Documentación
 
@@ -33,7 +33,7 @@ Un bot de WhatsApp que guía al cliente con un flujo de botones, captura los dat
 | 08 | [Arquitectura técnica](docs/08-arquitectura.md) | Componentes (WhatsApp Cloud API, backend, Redis, Google Sheets), flujo de una conversación y decisiones de diseño |
 | 09 | [Modelo de datos](docs/09-modelo-de-datos.md) | Estructura de la sesión en Redis y de la planilla de leads en Google Sheets |
 | 10 | [Implementación](docs/10-implementacion.md) | Backend Node.js, estructura del código, guía de configuración de credenciales |
-| 11 | [Testing](docs/11-testing.md) | 12 casos de prueba y registro de 11 bugs reales encontrados y resueltos en producción |
+| 11 | [Testing](docs/11-testing.md) | 12 casos de prueba (12/12 pasados) y registro de 11 bugs reales encontrados y resueltos en producción |
 | 12 | [KPIs y resultados](docs/12-kpis-y-resultados.md) | Métricas de éxito definidas, resultados del proceso de desarrollo y líneas de mejora futuras |
 
 ## Stack técnico
@@ -47,11 +47,11 @@ Ver el detalle y las alternativas descartadas en [08-arquitectura](docs/08-arqui
 
 ## Lo más destacable del proceso
 
-Más allá de la documentación, este proyecto se validó con **usuarios reales ajenos al desarrollo** (la mamá y el papá de Facu, sin conocimientos técnicos) probando el bot en producción — lo cual sacó a la luz bugs que ninguna prueba propia hubiera detectado: desde mensajes duplicados por el cold start del hosting gratuito, hasta un formato de patente de moto que nunca se contempló. Todo está documentado con causa, resolución y aprendizaje en [11-testing](docs/11-testing.md).
+Más allá de la documentación, este proyecto se validó con **usuarios reales ajenos al desarrollo** probando el bot en producción — lo cual sacó a la luz bugs que ninguna prueba propia hubiera detectado: desde mensajes duplicados por el cold start del hosting gratuito, hasta un formato de patente de moto que nunca se contempló. Todo está documentado con causa, resolución y aprendizaje en [11-testing](docs/11-testing.md).
 
 ## Autor
 
-**Facu** — desarrollador y analista funcional del proyecto.
+**Facundo Pérez** — desarrollador y analista funcional del proyecto.
 
 ## Licencia
 
